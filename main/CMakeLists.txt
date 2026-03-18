@@ -1,0 +1,35 @@
+idf_component_register(
+    SRCS
+        "main.c"
+        "badge_mode.c"
+        "clock_mode.c"
+        "weather_detail_mode.c"
+        "sun_arc_mode.c"
+        "moon_mode.c"
+        "debug_mode.c"
+        "weather.c"
+        "wifi_manager.c"
+        "qr_generate.c"
+        "qrcodegen.c"
+        "ui.c"
+    INCLUDE_DIRS
+        "."
+    REQUIRES
+        button_bsp
+        esp_wifi_bsp
+        i2c_bsp
+        sdcard_bsp
+        epaper_port
+        epaper_lib
+        shtc3_bsp
+        pcf85063_bsp
+        axpPower
+        esp_http_client
+        nvs_flash
+        esp_wifi
+        esp_netif
+        esp_event
+        json
+        mbedtls
+        esp_timer
+)

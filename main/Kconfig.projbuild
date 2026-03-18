@@ -1,0 +1,64 @@
+menu "ekami Digital Badge"
+    help
+        Configuration for the ekami digital badge
+
+    menu "Font Options"
+        config FONT12_EMBEDDED
+            bool "Embed Font12 in firmware"
+            default n
+
+        config FONT16_EMBEDDED
+            bool "Embed Font16 in firmware"
+            default y
+
+        config FONT18_EMBEDDED
+            bool "Embed Font18 in firmware"
+            default y
+
+        config FONT24_EMBEDDED
+            bool "Embed Font24 in firmware"
+            default y
+
+        config FONT28_EMBEDDED
+            bool "Embed Font28 in firmware"
+            default n
+
+        config FONT36_EMBEDDED
+            bool "Embed Font36 in firmware"
+            default n
+
+        config FONT48_EMBEDDED
+            bool "Embed Font48 in firmware"
+            default y
+
+        config Auxiliary_Font_EMBEDDED
+            bool "Embed Auxiliary Font in firmware"
+            default n
+
+        config FONT_ENABLE_TFCARD
+            bool "Enable TF card font support"
+            default y
+
+        config FONT_ENABLE_SDCARD
+            bool "Enable SD card font support (alias)"
+            default y
+
+        config FONT_DEBUG_ENABLED
+            bool "Enable font debugging logs"
+            default n
+    endmenu
+
+    menu "Image Resources"
+        choice
+            prompt "Image resource source"
+            default IMG_SOURCE_EMBEDDED
+
+            config IMG_SOURCE_EMBEDDED
+                bool "Embedded images"
+
+            config IMG_SOURCE_TFCARD
+                bool "TF/SD card images"
+        endchoice
+    endmenu
+
+endmenu

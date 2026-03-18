@@ -1,0 +1,27 @@
+#ifndef EKAMI_CONFIG_H
+#define EKAMI_CONFIG_H
+
+// Badge info
+#define BADGE_NAME          "${BADGE_NAME}"
+#define BADGE_TAGLINE       "${BADGE_TAGLINE}"
+#define BADGE_DETAIL        "${BADGE_DETAIL}"
+#define BADGE_QR_URL        "${BADGE_QR_URL}"
+
+// WiFi credentials
+#define WIFI_SSID            "${WIFI_SSID}"
+#define WIFI_PASSWORD        "${WIFI_PASSWORD}"
+
+// OpenWeatherMap
+#define OWM_API_KEY          "${OWM_API_KEY}"
+#define OWM_CITY             "${OWM_CITY}"
+#define OWM_UNITS            "${OWM_UNITS}"
+
+// Timezone (POSIX TZ string)
+#define TIMEZONE_STR         "${TIMEZONE_STR}"
+
+// Display update intervals
+#define CLOCK_UPDATE_INTERVAL_MS    (60 * 1000)
+#define WEATHER_UPDATE_INTERVAL_MS  (30 * 60 * 1000)
+#define FULL_REFRESH_INTERVAL_MS    (30 * 60 * 1000)
+
+#endif // EKAMI_CONFIG_H
