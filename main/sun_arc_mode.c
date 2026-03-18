@@ -37,11 +37,18 @@ static void draw_sun_arc(int arc_x, int arc_y, int arc_w, int arc_h,
     time_t rise = (time_t)wx->sunrise;
     time_t set = (time_t)wx->sunset;
 
+    if (set <= rise) {
+        *out_is_day = true;
+        *out_progress = 0.5f;
+        return;
+    }
+
     bool is_day = (now >= rise && now < set);
     float progress;
 
     if (is_day) {
-        progress = (float)(now - rise) / (float)(set - rise);
+        float duration = (float)(set - rise);
+        progress = (duration > 0) ? (float)(now - rise) / duration : 0.5f;
     } else {
         time_t night_start, night_end;
         if (now >= set) {
@@ -51,7 +58,8 @@ static void draw_sun_arc(int arc_x, int arc_y, int arc_w, int arc_h,
             night_start = set - 86400;
             night_end = rise;
         }
-        progress = (float)(now - night_start) / (float)(night_end - night_start);
+        float duration = (float)(night_end - night_start);
+        progress = (duration > 0) ? (float)(now - night_start) / duration : 0.5f;
     }
     if (progress < 0.0f) progress = 0.0f;
     if (progress > 1.0f) progress = 1.0f;

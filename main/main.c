@@ -194,7 +194,8 @@ void app_main(void)
         return;
     }
 
-    // Load cached weather immediately (before WiFi)
+    // Initialize weather subsystem and load cache (before WiFi)
+    weather_init();
     weather_load_cache();
 
     // Initial WiFi connect + weather fetch

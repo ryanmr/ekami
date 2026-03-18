@@ -2,9 +2,12 @@
 #include "config.h"
 #include "esp_log.h"
 #include "esp_http_client.h"
+#include "esp_crt_bundle.h"
 #include "cJSON.h"
 #include "nvs_flash.h"
 #include "nvs.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
 #include <string.h>
 #include <stdbool.h>
 #include <time.h>
@@ -12,6 +15,14 @@
 static const char *TAG = "weather";
 
 static weather_data_t cached_weather = { .valid = false };
+static SemaphoreHandle_t s_http_mutex = NULL;
+
+void weather_init(void)
+{
+    if (s_http_mutex == NULL) {
+        s_http_mutex = xSemaphoreCreateMutex();
+    }
+}
 
 #define MAX_RESPONSE_SIZE 4096
 static char response_buf[MAX_RESPONSE_SIZE];
@@ -58,9 +69,14 @@ weather_data_t weather_fetch(void)
 {
     weather_data_t result = { .valid = false };
 
+    if (xSemaphoreTake(s_http_mutex, pdMS_TO_TICKS(15000)) != pdTRUE) {
+        ESP_LOGW(TAG, "Could not acquire HTTP mutex");
+        return result;
+    }
+
     char url[320];
     snprintf(url, sizeof(url),
-        "http://api.openweathermap.org/data/2.5/weather?q=%s&appid=%s&units=%s",
+        "https://api.openweathermap.org/data/2.5/weather?q=%s&appid=%s&units=%s",
         OWM_CITY, OWM_API_KEY, OWM_UNITS);
 
     ESP_LOGI(TAG, "Fetching weather from OWM for %s", OWM_CITY);
@@ -72,9 +88,15 @@ weather_data_t weather_fetch(void)
         .url = url,
         .event_handler = http_event_handler,
         .timeout_ms = 10000,
+        .crt_bundle_attach = esp_crt_bundle_attach,
     };
 
     esp_http_client_handle_t client = esp_http_client_init(&config);
+    if (client == NULL) {
+        ESP_LOGE(TAG, "Failed to init HTTP client");
+        xSemaphoreGive(s_http_mutex);
+        return result;
+    }
     esp_err_t err = esp_http_client_perform(client);
 
     if (err == ESP_OK) {
@@ -163,6 +185,7 @@ weather_data_t weather_fetch(void)
         cached_weather = result;
     }
 
+    xSemaphoreGive(s_http_mutex);
     return result;
 }
 
@@ -170,9 +193,14 @@ void weather_fetch_aqi(void)
 {
     if (cached_weather.lat == 0.0f) return;
 
+    if (xSemaphoreTake(s_http_mutex, pdMS_TO_TICKS(15000)) != pdTRUE) {
+        ESP_LOGW(TAG, "Could not acquire HTTP mutex for AQI");
+        return;
+    }
+
     char url[256];
     snprintf(url, sizeof(url),
-        "http://api.openweathermap.org/data/2.5/air_pollution?lat=%.4f&lon=%.4f&appid=%s",
+        "https://api.openweathermap.org/data/2.5/air_pollution?lat=%.4f&lon=%.4f&appid=%s",
         cached_weather.lat, cached_weather.lon, OWM_API_KEY);
 
     ESP_LOGI(TAG, "Fetching AQI");
@@ -184,9 +212,15 @@ void weather_fetch_aqi(void)
         .url = url,
         .event_handler = http_event_handler,
         .timeout_ms = 10000,
+        .crt_bundle_attach = esp_crt_bundle_attach,
     };
 
     esp_http_client_handle_t client = esp_http_client_init(&config);
+    if (client == NULL) {
+        ESP_LOGE(TAG, "Failed to init HTTP client for AQI");
+        xSemaphoreGive(s_http_mutex);
+        return;
+    }
     esp_err_t err = esp_http_client_perform(client);
 
     if (err == ESP_OK && esp_http_client_get_status_code(client) == 200 && response_len > 0) {
@@ -213,6 +247,7 @@ void weather_fetch_aqi(void)
     }
 
     esp_http_client_cleanup(client);
+    xSemaphoreGive(s_http_mutex);
 }
 
 weather_data_t weather_get_cached(void)
