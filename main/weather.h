@@ -22,6 +22,9 @@ typedef struct {
     bool valid;
 } weather_data_t;
 
+// Initialize weather subsystem (must be called once from app_main)
+void weather_init(void);
+
 // Fetch current weather from OpenWeatherMap
 weather_data_t weather_fetch(void);
 

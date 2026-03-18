@@ -17,6 +17,13 @@ static const char *TAG = "weather";
 static weather_data_t cached_weather = { .valid = false };
 static SemaphoreHandle_t s_http_mutex = NULL;
 
+void weather_init(void)
+{
+    if (s_http_mutex == NULL) {
+        s_http_mutex = xSemaphoreCreateMutex();
+    }
+}
+
 #define MAX_RESPONSE_SIZE 4096
 static char response_buf[MAX_RESPONSE_SIZE];
 static int response_len;
@@ -62,10 +69,6 @@ weather_data_t weather_fetch(void)
 {
     weather_data_t result = { .valid = false };
 
-    // Ensure mutex exists
-    if (s_http_mutex == NULL) {
-        s_http_mutex = xSemaphoreCreateMutex();
-    }
     if (xSemaphoreTake(s_http_mutex, pdMS_TO_TICKS(15000)) != pdTRUE) {
         ESP_LOGW(TAG, "Could not acquire HTTP mutex");
         return result;
@@ -89,6 +92,11 @@ weather_data_t weather_fetch(void)
     };
 
     esp_http_client_handle_t client = esp_http_client_init(&config);
+    if (client == NULL) {
+        ESP_LOGE(TAG, "Failed to init HTTP client");
+        xSemaphoreGive(s_http_mutex);
+        return result;
+    }
     esp_err_t err = esp_http_client_perform(client);
 
     if (err == ESP_OK) {
@@ -185,9 +193,6 @@ void weather_fetch_aqi(void)
 {
     if (cached_weather.lat == 0.0f) return;
 
-    if (s_http_mutex == NULL) {
-        s_http_mutex = xSemaphoreCreateMutex();
-    }
     if (xSemaphoreTake(s_http_mutex, pdMS_TO_TICKS(15000)) != pdTRUE) {
         ESP_LOGW(TAG, "Could not acquire HTTP mutex for AQI");
         return;
@@ -211,6 +216,11 @@ void weather_fetch_aqi(void)
     };
 
     esp_http_client_handle_t client = esp_http_client_init(&config);
+    if (client == NULL) {
+        ESP_LOGE(TAG, "Failed to init HTTP client for AQI");
+        xSemaphoreGive(s_http_mutex);
+        return;
+    }
     esp_err_t err = esp_http_client_perform(client);
 
     if (err == ESP_OK && esp_http_client_get_status_code(client) == 200 && response_len > 0) {

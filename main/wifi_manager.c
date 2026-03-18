@@ -48,6 +48,7 @@ static void event_handler(void *arg, esp_event_base_t event_base,
 
 // One-time infrastructure setup (netif, event loop, event handlers).
 // Safe to call multiple times — only runs once.
+// NOT thread-safe: must only be called from a single task (app_main or wifi_power_task).
 static void wifi_ensure_infra(void)
 {
     if (s_infra_initialized) return;
